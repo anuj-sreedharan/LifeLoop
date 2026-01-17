@@ -597,10 +597,6 @@ struct EditSkincareSlotView: View {
     }
 }
 
-// MARK: - SkincareTimeOfDay Identifiable for sheet
-
-extension SkincareTimeOfDay: @retroactive Identifiable {}
-
 // MARK: - History View
 
 struct HistoryView: View {
