@@ -4,15 +4,17 @@ This document provides guidelines for AI coding agents working in this repositor
 
 ## App Domain Rules
 
-- Lifeloop is a **personal habit & routine tracker**
+- Lifeloop is a **personal hourly activity logger**
 - Core features:
-  - Daily tasks
-  - Skincare routines
+  - Hourly activity logging (24-hour timeline)
+  - Skincare routines (AM/PM)
   - Reminders & notifications
+- Lifeloop is NOT a task/todo app
 - Do NOT add:
   - Social features
   - Cloud sync (unless explicitly requested)
   - Authentication or user accounts
+  - Task/todo functionality
 
 ## Notifications
 
@@ -117,8 +119,9 @@ Lifeloop/
 ├── AGENTS.md                # AI agent guidelines (this file)
 ├── Lifeloop/
 │   ├── Assets.xcassets/     # Images, colors, app icon
-│   ├── Lifeloop.xcdatamodeld/ # CoreData model (TaskEntry, SkincareEntry)
-│   ├── ContentView.swift    # Main views (Home, History, Add/Edit)
+│   ├── Lifeloop.xcdatamodeld/ # CoreData model (HourlyActivityEntry, SkincareEntry)
+│   ├── ActivityType.swift   # Centralized activity type enum
+│   ├── ContentView.swift    # Main views (Home, Skincare, History, Edit)
 │   ├── LifeloopApp.swift    # App entry point (@main)
 │   ├── NotificationManager.swift # Reminder scheduling
 │   └── Persistence.swift    # CoreData persistence layer + preview data
