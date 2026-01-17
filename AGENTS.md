@@ -8,13 +8,16 @@ This document provides guidelines for AI coding agents working in this repositor
 - Core features:
   - Hourly activity logging (24-hour timeline)
   - Skincare routines (AM/PM)
+  - Spending awareness (simple logging)
+  - Dashboard (daily overview)
   - Reminders & notifications
-- Lifeloop is NOT a task/todo app
+- Lifeloop is NOT a task/todo app or budgeting app
 - Do NOT add:
   - Social features
   - Cloud sync (unless explicitly requested)
   - Authentication or user accounts
   - Task/todo functionality
+  - Budget limits, alerts, or financial warnings
 
 ## Notifications
 
@@ -28,6 +31,18 @@ This document provides guidelines for AI coding agents working in this repositor
 - PM reminder at 21:00
 - Only fire if slot is "Not logged"
 - Do NOT send reminders for Completed or Skipped slots
+
+## Spending
+
+- Spending is for **awareness only**, NOT budgeting
+- Do NOT add:
+  - Budget limits or caps
+  - Spending alerts or warnings
+  - Financial advice or judgments
+  - Category budgets
+- UI should be calm and non-judgmental
+- Fixed categories (9 total): Food & Drinks, Transport, Shopping, Rent/Bills, Subscriptions, Health, Travel, Social, Misc
+- Dashboard shows totals and averages without judgment
 
 ## CoreData Migration
 
@@ -125,13 +140,16 @@ Lifeloop/
 ├── AGENTS.md                # AI agent guidelines (this file)
 ├── Lifeloop/
 │   ├── Assets.xcassets/     # Images, colors, app icon
-│   ├── Lifeloop.xcdatamodeld/ # CoreData model (HourlyActivityEntry, SkincareEntry)
+│   ├── Lifeloop.xcdatamodeld/ # CoreData model (HourlyActivityEntry, SkincareEntry, SpendingEntry)
 │   ├── ActivityType.swift   # Centralized activity type enum
 │   ├── ContentView.swift    # Main views (Home, Skincare, History, Edit)
+│   ├── DashboardView.swift  # Dashboard with daily overview
 │   ├── LifeloopApp.swift    # App entry point (@main)
 │   ├── NotificationManager.swift # Reminder scheduling
 │   ├── Persistence.swift    # CoreData persistence layer + preview data
-│   └── SkincareSlotStatus.swift # Skincare slot status and time of day enums
+│   ├── SkincareSlotStatus.swift # Skincare slot status and time of day enums
+│   ├── SpendingCategory.swift # Spending category enum
+│   └── SpendingView.swift   # Spending history and add/edit views
 └── Lifeloop.xcodeproj/      # Xcode project configuration
 ```
 
