@@ -14,9 +14,14 @@
         <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="notes" optional="YES" attributeType="String"/>
-        <attribute name="productName" attributeType="String" defaultValueString=""/>
-        <attribute name="stepType" attributeType="String" defaultValueString="Cleanser"/>
+        <attribute name="products" optional="YES" attributeType="String"/>
+        <attribute name="status" attributeType="String" defaultValueString="notLogged"/>
         <attribute name="timeOfDay" attributeType="String" defaultValueString="AM"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <userInfo>
+            <entry key="slotModel" value="true"/>
+            <entry key="slotNote" value="One entry per date+timeOfDay. Status: notLogged, completed, skipped"/>
+        </userInfo>
     </entity>
     <entity name="TaskEntry" representedClassName="TaskEntry" syncable="YES" codeGenerationType="class">
         <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
