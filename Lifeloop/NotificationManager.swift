@@ -44,9 +44,9 @@ final class NotificationManager {
     /// Schedule fixed-time reminders for AM (08:00) and PM (21:00) skincare
     /// Only fires if the slot is still "Not logged"
     func scheduleFixedSkincareReminders() async {
-        guard isAuthorized else {
+        if !isAuthorized {
             let granted = await requestAuthorization()
-            guard granted else { return }
+            if !granted { return }
         }
         
         // Schedule AM reminder at 08:00
