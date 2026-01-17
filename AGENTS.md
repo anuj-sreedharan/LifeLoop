@@ -23,6 +23,12 @@ This document provides guidelines for AI coding agents working in this repositor
 - Notification scheduling must be idempotent
 - Avoid scheduling duplicate notifications
 
+### Skincare Reminders (Fixed Times)
+- AM reminder at 08:00
+- PM reminder at 21:00
+- Only fire if slot is "Not logged"
+- Do NOT send reminders for Completed or Skipped slots
+
 ## CoreData Migration
 
 - Do NOT delete or rename entities without a migration plan
@@ -124,7 +130,8 @@ Lifeloop/
 │   ├── ContentView.swift    # Main views (Home, Skincare, History, Edit)
 │   ├── LifeloopApp.swift    # App entry point (@main)
 │   ├── NotificationManager.swift # Reminder scheduling
-│   └── Persistence.swift    # CoreData persistence layer + preview data
+│   ├── Persistence.swift    # CoreData persistence layer + preview data
+│   └── SkincareSlotStatus.swift # Skincare slot status and time of day enums
 └── Lifeloop.xcodeproj/      # Xcode project configuration
 ```
 
