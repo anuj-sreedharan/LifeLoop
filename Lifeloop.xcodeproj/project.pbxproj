@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		75B36A7A2F1C41A300A9FBC6 /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75B36A792F1C41A300A9FBC6 /* AGENTS.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		75B36A662F1C3EB900A9FBC6 /* Lifeloop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lifeloop.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		75B36A792F1C41A300A9FBC6 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +37,7 @@
 		75B36A5D2F1C3EB900A9FBC6 = {
 			isa = PBXGroup;
 			children = (
+				75B36A792F1C41A300A9FBC6 /* AGENTS.md */,
 				75B36A682F1C3EB900A9FBC6 /* Lifeloop */,
 				75B36A672F1C3EB900A9FBC6 /* Products */,
 			);
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75B36A7A2F1C41A300A9FBC6 /* AGENTS.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
