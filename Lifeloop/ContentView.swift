@@ -319,15 +319,14 @@ extension Int: @retroactive Identifiable {
     public var id: Int { self }
 }
 
-// MARK: - Skincare View
+// MARK: - Skincare View (Slot-Based)
 
 struct SkincareView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
     @FetchRequest private var todaysSkincare: FetchedResults<SkincareEntry>
     
-    @State private var showingAddSkincare = false
-    @State private var skincareToEdit: SkincareEntry?
+    @State private var selectedSlot: SkincareTimeOfDay?
     
     init() {
         let calendar = Calendar.current
@@ -336,10 +335,7 @@ struct SkincareView: View {
         
         let predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
         _todaysSkincare = FetchRequest(
-            sortDescriptors: [
-                NSSortDescriptor(keyPath: \SkincareEntry.timeOfDay, ascending: true),
-                NSSortDescriptor(keyPath: \SkincareEntry.createdAt, ascending: true)
-            ],
+            sortDescriptors: [NSSortDescriptor(keyPath: \SkincareEntry.timeOfDay, ascending: true)],
             predicate: predicate,
             animation: .default
         )
@@ -348,179 +344,203 @@ struct SkincareView: View {
     var body: some View {
         NavigationStack {
             List {
-                // AM Section
+                // Date Header
                 Section {
-                    let amEntries = todaysSkincare.filter { $0.timeOfDay == "AM" }
-                    if amEntries.isEmpty {
-                        Text("No morning routine")
-                            .foregroundStyle(.secondary)
-                            .italic()
-                    } else {
-                        ForEach(amEntries) { entry in
-                            SkincareRowView(entry: entry)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    skincareToEdit = entry
-                                }
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(Date(), style: .date)
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                            
+                            Text("Daily Skincare Routine")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        .onDelete { offsets in
-                            deleteEntries(amEntries, at: offsets)
-                        }
+                        Spacer()
                     }
-                } header: {
-                    Label("Morning (AM)", systemImage: "sun.max.fill")
+                    .listRowBackground(Color.clear)
                 }
                 
-                // PM Section
+                // AM Slot
                 Section {
-                    let pmEntries = todaysSkincare.filter { $0.timeOfDay == "PM" }
-                    if pmEntries.isEmpty {
-                        Text("No evening routine")
-                            .foregroundStyle(.secondary)
-                            .italic()
-                    } else {
-                        ForEach(pmEntries) { entry in
-                            SkincareRowView(entry: entry)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    skincareToEdit = entry
-                                }
-                        }
-                        .onDelete { offsets in
-                            deleteEntries(pmEntries, at: offsets)
-                        }
+                    SkincareSlotRowView(
+                        timeOfDay: .am,
+                        entry: entryForSlot(.am)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedSlot = .am
                     }
                 } header: {
-                    Label("Evening (PM)", systemImage: "moon.fill")
+                    Label("Morning Routine", systemImage: "sun.max.fill")
+                }
+                
+                // PM Slot
+                Section {
+                    SkincareSlotRowView(
+                        timeOfDay: .pm,
+                        entry: entryForSlot(.pm)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedSlot = .pm
+                    }
+                } header: {
+                    Label("Evening Routine", systemImage: "moon.fill")
                 }
             }
             .navigationTitle("Skincare")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingAddSkincare = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+            .sheet(item: $selectedSlot) { slot in
+                EditSkincareSlotView(
+                    timeOfDay: slot,
+                    existingEntry: entryForSlot(slot)
+                )
+            }
+            .onAppear {
+                // Schedule reminders when view appears
+                Task {
+                    await scheduleRemindersIfNeeded()
                 }
             }
-            .sheet(isPresented: $showingAddSkincare) {
-                AddEditSkincareView(entry: nil)
-            }
-            .sheet(item: $skincareToEdit) { entry in
-                AddEditSkincareView(entry: entry)
-            }
         }
     }
     
-    private func deleteEntries(_ entries: [SkincareEntry], at offsets: IndexSet) {
-        withAnimation {
-            offsets.map { entries[$0] }.forEach(viewContext.delete)
-            saveContext()
-        }
+    private func entryForSlot(_ timeOfDay: SkincareTimeOfDay) -> SkincareEntry? {
+        todaysSkincare.first { $0.timeOfDay == timeOfDay.rawValue }
     }
     
-    private func saveContext() {
-        do {
-            try viewContext.save()
-        } catch {
-            let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-        }
+    private func scheduleRemindersIfNeeded() async {
+        // Request authorization first
+        let authorized = await NotificationManager.shared.requestAuthorization()
+        guard authorized else { return }
+        
+        // Schedule fixed-time reminders
+        await NotificationManager.shared.scheduleFixedSkincareReminders()
     }
 }
 
-// MARK: - Skincare Row View
+// MARK: - Skincare Slot Row View
 
-struct SkincareRowView: View {
-    @ObservedObject var entry: SkincareEntry
+struct SkincareSlotRowView: View {
+    let timeOfDay: SkincareTimeOfDay
+    let entry: SkincareEntry?
+    
+    private var status: SkincareSlotStatus {
+        guard let entry = entry else { return .notLogged }
+        return SkincareSlotStatus.from(entry.status)
+    }
     
     var body: some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.productName ?? "Unknown Product")
+            // Status icon
+            Image(systemName: status.icon)
+                .font(.title2)
+                .foregroundStyle(status.color)
+                .frame(width: 32)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(timeOfDay.displayName)
+                        .font(.headline)
+                    
+                    Spacer()
+                    
+                    Text(status.displayName)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(status.color.opacity(0.15))
+                        .foregroundStyle(status.color)
+                        .clipShape(Capsule())
+                }
                 
-                Text(entry.stepType ?? "Step")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // Show products if completed
+                if status == .completed, let products = entry?.products, !products.isEmpty {
+                    Text(products)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                
+                // Show notes if any
+                if let notes = entry?.notes, !notes.isEmpty {
+                    Text(notes)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
             
             Spacer()
-            
-            if let notes = entry.notes, !notes.isEmpty {
-                Image(systemName: "note.text")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
             
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
+        .padding(.vertical, 8)
     }
 }
 
-// MARK: - Add/Edit Skincare View
+// MARK: - Edit Skincare Slot View
 
-struct AddEditSkincareView: View {
+struct EditSkincareSlotView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
     
-    let entry: SkincareEntry?
+    let timeOfDay: SkincareTimeOfDay
+    let existingEntry: SkincareEntry?
     
-    @State private var productName: String = ""
-    @State private var stepType: String = "Cleanser"
-    @State private var timeOfDay: String = "AM"
+    @State private var status: SkincareSlotStatus = .notLogged
+    @State private var products: String = ""
     @State private var notes: String = ""
-    @State private var date: Date = Date()
-    
-    private var isEditing: Bool { entry != nil }
-    
-    private let stepTypes = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen", "Treatment", "Mask", "Eye Cream", "Oil"]
     
     var body: some View {
         NavigationStack {
             Form {
+                // Time display (non-editable)
                 Section {
-                    TextField("Product name", text: $productName)
-                    
-                    Picker("Step Type", selection: $stepType) {
-                        ForEach(stepTypes, id: \.self) { type in
-                            Text(type).tag(type)
-                        }
+                    HStack {
+                        Label(timeOfDay.displayName, systemImage: timeOfDay.icon)
+                            .foregroundStyle(timeOfDay.color)
+                        Spacer()
                     }
-                    
-                    Picker("Time of Day", selection: $timeOfDay) {
-                        Text("AM ☀️").tag("AM")
-                        Text("PM 🌙").tag("PM")
-                    }
-                    .pickerStyle(.segmented)
                 }
                 
+                // Status picker
+                Section {
+                    Picker("Status", selection: $status) {
+                        ForEach(SkincareSlotStatus.allCases) { s in
+                            Label(s.displayName, systemImage: s.icon)
+                                .tag(s)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                } header: {
+                    Text("How did it go?")
+                }
+                
+                // Products (only if completed)
+                if status == .completed {
+                    Section {
+                        TextField("Products used", text: $products, axis: .vertical)
+                            .lineLimit(3...6)
+                    } header: {
+                        Text("Products")
+                    } footer: {
+                        Text("List the products you used (e.g., Cleanser, Serum, Moisturizer)")
+                    }
+                }
+                
+                // Notes
                 Section {
                     TextField("Notes (optional)", text: $notes, axis: .vertical)
                         .lineLimit(3...6)
-                }
-                
-                Section {
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                }
-                
-                if isEditing {
-                    Section {
-                        Button(role: .destructive) {
-                            deleteEntry()
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Text("Delete Entry")
-                                Spacer()
-                            }
-                        }
-                    }
+                } header: {
+                    Text("Notes")
                 }
             }
-            .navigationTitle(isEditing ? "Edit Skincare" : "New Skincare")
+            .navigationTitle("\(timeOfDay.rawValue) Skincare")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -532,50 +552,43 @@ struct AddEditSkincareView: View {
                     Button("Save") {
                         saveEntry()
                     }
-                    .disabled(productName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .onAppear {
-                if let entry = entry {
-                    productName = entry.productName ?? ""
-                    stepType = entry.stepType ?? "Cleanser"
-                    timeOfDay = entry.timeOfDay ?? "AM"
+                if let entry = existingEntry {
+                    status = SkincareSlotStatus.from(entry.status)
+                    products = entry.products ?? ""
                     notes = entry.notes ?? ""
-                    date = entry.date ?? Date()
                 }
             }
         }
     }
     
     private func saveEntry() {
-        let skincareEntry = entry ?? SkincareEntry(context: viewContext)
+        let entry = existingEntry ?? SkincareEntry(context: viewContext)
         
-        if entry == nil {
-            skincareEntry.id = UUID()
-            skincareEntry.createdAt = Date()
+        let now = Date()
+        
+        if existingEntry == nil {
+            entry.id = UUID()
+            entry.date = Calendar.current.startOfDay(for: now)
+            entry.timeOfDay = timeOfDay.rawValue
+            entry.createdAt = now
         }
         
-        skincareEntry.productName = productName.trimmingCharacters(in: .whitespacesAndNewlines)
-        skincareEntry.stepType = stepType
-        skincareEntry.timeOfDay = timeOfDay
-        skincareEntry.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        skincareEntry.date = Calendar.current.startOfDay(for: date)
+        entry.status = status.rawValue
+        entry.products = status == .completed ? products.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+        entry.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        entry.updatedAt = now
         
         do {
             try viewContext.save()
-            dismiss()
-        } catch {
-            let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-        }
-    }
-    
-    private func deleteEntry() {
-        guard let entry = entry else { return }
-        viewContext.delete(entry)
-        
-        do {
-            try viewContext.save()
+            
+            // Update reminders after saving
+            Task {
+                await NotificationManager.shared.scheduleFixedSkincareReminders()
+            }
+            
             dismiss()
         } catch {
             let nsError = error as NSError
@@ -583,6 +596,10 @@ struct AddEditSkincareView: View {
         }
     }
 }
+
+// MARK: - SkincareTimeOfDay Identifiable for sheet
+
+extension SkincareTimeOfDay: @retroactive Identifiable {}
 
 // MARK: - History View
 
