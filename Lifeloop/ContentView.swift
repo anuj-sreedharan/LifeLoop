@@ -11,12 +11,20 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
+            Tab("Dashboard", systemImage: "square.grid.2x2") {
+                DashboardView()
+            }
+            
             Tab("Today", systemImage: "clock.fill") {
                 HomeView()
             }
             
             Tab("Skincare", systemImage: "sparkles") {
                 SkincareView()
+            }
+            
+            Tab("Spending", systemImage: "creditcard") {
+                SpendingView()
             }
             
             Tab("History", systemImage: "calendar") {
