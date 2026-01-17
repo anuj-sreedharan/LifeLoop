@@ -5,6 +5,7 @@
 //  Created by Anuj S on 17/01/2026.
 //
 
+import CoreData
 import Foundation
 import UserNotifications
 
@@ -38,67 +39,63 @@ final class NotificationManager {
         isAuthorized = settings.authorizationStatus == .authorized
     }
     
-    // MARK: - Skincare Reminders
+    // MARK: - Fixed-Time Skincare Reminders
     
-    func scheduleSkincareReminder(for entry: SkincareEntry, at date: Date) async {
-        guard let entryId = entry.id, let productName = entry.productName else { return }
-        
-        // Remove existing notification for this entry first (idempotent)
-        removeSkincareReminder(for: entry)
-        
-        // Don't schedule if the date is in the past
-        guard date > Date() else { return }
-        
-        let timeOfDay = entry.timeOfDay ?? "AM"
-        
-        let content = UNMutableNotificationContent()
-        content.title = "\(timeOfDay) Skincare Reminder"
-        content.body = "Time for: \(productName)"
-        content.sound = .default
-        content.userInfo = ["skincareId": entryId.uuidString, "type": "skincare"]
-        
-        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-        
-        let request = UNNotificationRequest(
-            identifier: "skincare-\(entryId.uuidString)",
-            content: content,
-            trigger: trigger
-        )
-        
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-        } catch {
-            print("Failed to schedule skincare reminder: \(error.localizedDescription)")
+    /// Schedule fixed-time reminders for AM (08:00) and PM (21:00) skincare
+    /// Only fires if the slot is still "Not logged"
+    func scheduleFixedSkincareReminders() async {
+        guard isAuthorized else {
+            let granted = await requestAuthorization()
+            guard granted else { return }
         }
+        
+        // Schedule AM reminder at 08:00
+        await scheduleSkincareSlotReminder(for: .am)
+        
+        // Schedule PM reminder at 21:00
+        await scheduleSkincareSlotReminder(for: .pm)
     }
     
-    func removeSkincareReminder(for entry: SkincareEntry) {
-        guard let entryId = entry.id else { return }
-        UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: ["skincare-\(entryId.uuidString)"]
-        )
-    }
-    
-    // MARK: - Daily Routine Reminders
-    
-    func scheduleDailyRoutineReminder(hour: Int, minute: Int, timeOfDay: String) async {
-        let identifier = "daily-routine-\(timeOfDay)"
+    /// Schedule a reminder for a specific skincare slot
+    private func scheduleSkincareSlotReminder(for timeOfDay: SkincareTimeOfDay) async {
+        let identifier = "skincare-slot-\(timeOfDay.rawValue)"
         
         // Remove existing to avoid duplicates
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
         
+        // Check if slot is already completed or skipped for today
+        if await isSlotCompletedOrSkipped(timeOfDay: timeOfDay) {
+            // Don't schedule reminder if already logged
+            return
+        }
+        
+        // Check if reminder time has already passed today
+        let now = Date()
+        let calendar = Calendar.current
+        var reminderComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        reminderComponents.hour = timeOfDay.reminderHour
+        reminderComponents.minute = 0
+        
+        guard let reminderDate = calendar.date(from: reminderComponents) else { return }
+        
+        // If reminder time has passed today, schedule for tomorrow
+        let triggerDate: Date
+        if reminderDate <= now {
+            triggerDate = calendar.date(byAdding: .day, value: 1, to: reminderDate) ?? reminderDate
+        } else {
+            triggerDate = reminderDate
+        }
+        
         let content = UNMutableNotificationContent()
-        content.title = "\(timeOfDay) Routine"
-        content.body = timeOfDay == "AM" ? "Start your morning skincare routine" : "Time for your evening skincare routine"
+        content.title = "\(timeOfDay.rawValue) Skincare Reminder"
+        content.body = timeOfDay == .am 
+            ? "Time for your morning skincare routine!" 
+            : "Time for your evening skincare routine!"
         content.sound = .default
-        content.userInfo = ["type": "dailyRoutine", "timeOfDay": timeOfDay]
+        content.userInfo = ["type": "skincareSlot", "timeOfDay": timeOfDay.rawValue]
         
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = minute
-        
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        let triggerComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
         
         let request = UNNotificationRequest(
             identifier: identifier,
@@ -109,13 +106,52 @@ final class NotificationManager {
         do {
             try await UNUserNotificationCenter.current().add(request)
         } catch {
-            print("Failed to schedule daily routine reminder: \(error.localizedDescription)")
+            print("Failed to schedule skincare slot reminder: \(error.localizedDescription)")
         }
     }
     
-    func removeDailyRoutineReminder(timeOfDay: String) {
-        let identifier = "daily-routine-\(timeOfDay)"
+    /// Check if a skincare slot is completed or skipped for today
+    private func isSlotCompletedOrSkipped(timeOfDay: SkincareTimeOfDay) async -> Bool {
+        // Access CoreData on main actor
+        let context = PersistenceController.shared.container.viewContext
+        
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: Date())
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let request: NSFetchRequest<SkincareEntry> = SkincareEntry.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "date >= %@ AND date < %@ AND timeOfDay == %@",
+            startOfDay as NSDate,
+            endOfDay as NSDate,
+            timeOfDay.rawValue
+        )
+        request.fetchLimit = 1
+        
+        do {
+            let results = try context.fetch(request)
+            if let entry = results.first {
+                let status = SkincareSlotStatus.from(entry.status)
+                return status == .completed || status == .skipped
+            }
+        } catch {
+            print("Failed to fetch skincare entry: \(error.localizedDescription)")
+        }
+        
+        return false
+    }
+    
+    /// Remove skincare slot reminder
+    func removeSkincareSlotReminder(for timeOfDay: SkincareTimeOfDay) {
+        let identifier = "skincare-slot-\(timeOfDay.rawValue)"
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+    }
+    
+    /// Remove all skincare slot reminders
+    func removeAllSkincareSlotReminders() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: ["skincare-slot-AM", "skincare-slot-PM"]
+        )
     }
     
     // MARK: - Clear All
