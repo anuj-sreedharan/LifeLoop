@@ -38,46 +38,6 @@ final class NotificationManager {
         isAuthorized = settings.authorizationStatus == .authorized
     }
     
-    // MARK: - Task Reminders
-    
-    func scheduleTaskReminder(for task: TaskEntry, at date: Date) async {
-        guard let taskId = task.id, let title = task.title else { return }
-        
-        // Remove existing notification for this task first (idempotent)
-        removeTaskReminder(for: task)
-        
-        // Don't schedule if the date is in the past
-        guard date > Date() else { return }
-        
-        let content = UNMutableNotificationContent()
-        content.title = "Task Reminder"
-        content.body = title
-        content.sound = .default
-        content.userInfo = ["taskId": taskId.uuidString, "type": "task"]
-        
-        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-        
-        let request = UNNotificationRequest(
-            identifier: "task-\(taskId.uuidString)",
-            content: content,
-            trigger: trigger
-        )
-        
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-        } catch {
-            print("Failed to schedule task reminder: \(error.localizedDescription)")
-        }
-    }
-    
-    func removeTaskReminder(for task: TaskEntry) {
-        guard let taskId = task.id else { return }
-        UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: ["task-\(taskId.uuidString)"]
-        )
-    }
-    
     // MARK: - Skincare Reminders
     
     func scheduleSkincareReminder(for entry: SkincareEntry, at date: Date) async {
