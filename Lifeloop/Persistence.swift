@@ -15,43 +15,100 @@ struct PersistenceController {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
         
-        // Create sample TaskEntry items
         let today = Calendar.current.startOfDay(for: Date())
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        let now = Date()
         
-        let task1 = TaskEntry(context: viewContext)
-        task1.id = UUID()
-        task1.title = "Morning meditation"
-        task1.notes = "10 minutes of mindfulness"
-        task1.date = today
-        task1.isCompleted = true
-        task1.createdAt = Date()
+        // MARK: - Sample HourlyActivityEntry items for today
         
-        let task2 = TaskEntry(context: viewContext)
-        task2.id = UUID()
-        task2.title = "Drink 8 glasses of water"
-        task2.notes = nil
-        task2.date = today
-        task2.isCompleted = false
-        task2.createdAt = Date()
+        // Sleep hours (0-7)
+        for hour in 0...6 {
+            let entry = HourlyActivityEntry(context: viewContext)
+            entry.id = UUID()
+            entry.date = today
+            entry.hour = Int16(hour)
+            entry.activityType = ActivityType.sleep.rawValue
+            entry.notes = nil
+            entry.createdAt = now
+            entry.updatedAt = now
+        }
         
-        let task3 = TaskEntry(context: viewContext)
-        task3.id = UUID()
-        task3.title = "Evening walk"
-        task3.notes = "30 minutes around the park"
-        task3.date = today
-        task3.isCompleted = false
-        task3.createdAt = Date()
+        // Morning routine (7)
+        let morning = HourlyActivityEntry(context: viewContext)
+        morning.id = UUID()
+        morning.date = today
+        morning.hour = 7
+        morning.activityType = ActivityType.miscGettingReady.rawValue
+        morning.notes = "Shower, breakfast"
+        morning.createdAt = now
+        morning.updatedAt = now
         
-        let task4 = TaskEntry(context: viewContext)
-        task4.id = UUID()
-        task4.title = "Read for 20 minutes"
-        task4.notes = nil
-        task4.date = yesterday
-        task4.isCompleted = true
-        task4.createdAt = yesterday
+        // Work hours (8-12)
+        for hour in 8...11 {
+            let entry = HourlyActivityEntry(context: viewContext)
+            entry.id = UUID()
+            entry.date = today
+            entry.hour = Int16(hour)
+            entry.activityType = ActivityType.work.rawValue
+            entry.notes = nil
+            entry.createdAt = now
+            entry.updatedAt = now
+        }
         
-        // Create sample SkincareEntry items
+        // Lunch (12)
+        let lunch = HourlyActivityEntry(context: viewContext)
+        lunch.id = UUID()
+        lunch.date = today
+        lunch.hour = 12
+        lunch.activityType = ActivityType.relaxationLeisure.rawValue
+        lunch.notes = "Lunch break"
+        lunch.createdAt = now
+        lunch.updatedAt = now
+        
+        // Afternoon work (13-17)
+        for hour in 13...16 {
+            let entry = HourlyActivityEntry(context: viewContext)
+            entry.id = UUID()
+            entry.date = today
+            entry.hour = Int16(hour)
+            entry.activityType = ActivityType.work.rawValue
+            entry.notes = nil
+            entry.createdAt = now
+            entry.updatedAt = now
+        }
+        
+        // Exercise (17)
+        let exercise = HourlyActivityEntry(context: viewContext)
+        exercise.id = UUID()
+        exercise.date = today
+        exercise.hour = 17
+        exercise.activityType = ActivityType.exercise.rawValue
+        exercise.notes = "Gym session"
+        exercise.createdAt = now
+        exercise.updatedAt = now
+        
+        // Friends (18-19)
+        let friends = HourlyActivityEntry(context: viewContext)
+        friends.id = UUID()
+        friends.date = today
+        friends.hour = 18
+        friends.activityType = ActivityType.friends.rawValue
+        friends.notes = "Dinner with friends"
+        friends.createdAt = now
+        friends.updatedAt = now
+        
+        // Sample entry for yesterday
+        let yesterdayWork = HourlyActivityEntry(context: viewContext)
+        yesterdayWork.id = UUID()
+        yesterdayWork.date = yesterday
+        yesterdayWork.hour = 10
+        yesterdayWork.activityType = ActivityType.work.rawValue
+        yesterdayWork.notes = "Project meeting"
+        yesterdayWork.createdAt = yesterday
+        yesterdayWork.updatedAt = yesterday
+        
+        // MARK: - Sample SkincareEntry items
+        
         let skincare1 = SkincareEntry(context: viewContext)
         skincare1.id = UUID()
         skincare1.productName = "Gentle Foaming Cleanser"
@@ -59,7 +116,7 @@ struct PersistenceController {
         skincare1.timeOfDay = "AM"
         skincare1.notes = nil
         skincare1.date = today
-        skincare1.createdAt = Date()
+        skincare1.createdAt = now
         
         let skincare2 = SkincareEntry(context: viewContext)
         skincare2.id = UUID()
@@ -68,7 +125,7 @@ struct PersistenceController {
         skincare2.timeOfDay = "AM"
         skincare2.notes = "Apply after toner"
         skincare2.date = today
-        skincare2.createdAt = Date()
+        skincare2.createdAt = now
         
         let skincare3 = SkincareEntry(context: viewContext)
         skincare3.id = UUID()
@@ -77,7 +134,7 @@ struct PersistenceController {
         skincare3.timeOfDay = "AM"
         skincare3.notes = nil
         skincare3.date = today
-        skincare3.createdAt = Date()
+        skincare3.createdAt = now
         
         let skincare4 = SkincareEntry(context: viewContext)
         skincare4.id = UUID()
@@ -86,7 +143,7 @@ struct PersistenceController {
         skincare4.timeOfDay = "PM"
         skincare4.notes = "Double cleanse first step"
         skincare4.date = today
-        skincare4.createdAt = Date()
+        skincare4.createdAt = now
         
         let skincare5 = SkincareEntry(context: viewContext)
         skincare5.id = UUID()
@@ -95,7 +152,7 @@ struct PersistenceController {
         skincare5.timeOfDay = "PM"
         skincare5.notes = "Use every other night"
         skincare5.date = today
-        skincare5.createdAt = Date()
+        skincare5.createdAt = now
         
         do {
             try viewContext.save()
