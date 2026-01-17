@@ -9,10 +9,10 @@ import Foundation
 import UserNotifications
 
 @MainActor
-final class NotificationManager: ObservableObject {
+final class NotificationManager {
     static let shared = NotificationManager()
     
-    @Published var isAuthorized = false
+    private(set) var isAuthorized = false
     
     private init() {
         Task {
@@ -44,7 +44,7 @@ final class NotificationManager: ObservableObject {
         guard let taskId = task.id, let title = task.title else { return }
         
         // Remove existing notification for this task first (idempotent)
-        await removeTaskReminder(for: task)
+        removeTaskReminder(for: task)
         
         // Don't schedule if the date is in the past
         guard date > Date() else { return }
@@ -71,7 +71,7 @@ final class NotificationManager: ObservableObject {
         }
     }
     
-    func removeTaskReminder(for task: TaskEntry) async {
+    func removeTaskReminder(for task: TaskEntry) {
         guard let taskId = task.id else { return }
         UNUserNotificationCenter.current().removePendingNotificationRequests(
             withIdentifiers: ["task-\(taskId.uuidString)"]
@@ -84,7 +84,7 @@ final class NotificationManager: ObservableObject {
         guard let entryId = entry.id, let productName = entry.productName else { return }
         
         // Remove existing notification for this entry first (idempotent)
-        await removeSkincareReminder(for: entry)
+        removeSkincareReminder(for: entry)
         
         // Don't schedule if the date is in the past
         guard date > Date() else { return }
@@ -113,7 +113,7 @@ final class NotificationManager: ObservableObject {
         }
     }
     
-    func removeSkincareReminder(for entry: SkincareEntry) async {
+    func removeSkincareReminder(for entry: SkincareEntry) {
         guard let entryId = entry.id else { return }
         UNUserNotificationCenter.current().removePendingNotificationRequests(
             withIdentifiers: ["skincare-\(entryId.uuidString)"]
