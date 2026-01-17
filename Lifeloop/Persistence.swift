@@ -21,7 +21,7 @@ struct PersistenceController {
         
         // MARK: - Sample HourlyActivityEntry items for today
         
-        // Sleep hours (0-7)
+        // Sleep hours (0-6)
         for hour in 0...6 {
             let entry = HourlyActivityEntry(context: viewContext)
             entry.id = UUID()
@@ -43,7 +43,7 @@ struct PersistenceController {
         morning.createdAt = now
         morning.updatedAt = now
         
-        // Work hours (8-12)
+        // Work hours (8-11)
         for hour in 8...11 {
             let entry = HourlyActivityEntry(context: viewContext)
             entry.id = UUID()
@@ -65,7 +65,7 @@ struct PersistenceController {
         lunch.createdAt = now
         lunch.updatedAt = now
         
-        // Afternoon work (13-17)
+        // Afternoon work (13-16)
         for hour in 13...16 {
             let entry = HourlyActivityEntry(context: viewContext)
             entry.id = UUID()
@@ -87,7 +87,7 @@ struct PersistenceController {
         exercise.createdAt = now
         exercise.updatedAt = now
         
-        // Friends (18-19)
+        // Friends (18)
         let friends = HourlyActivityEntry(context: viewContext)
         friends.id = UUID()
         friends.date = today
@@ -107,52 +107,50 @@ struct PersistenceController {
         yesterdayWork.createdAt = yesterday
         yesterdayWork.updatedAt = yesterday
         
-        // MARK: - Sample SkincareEntry items
+        // MARK: - Sample SkincareEntry slots (slot-based model)
         
-        let skincare1 = SkincareEntry(context: viewContext)
-        skincare1.id = UUID()
-        skincare1.productName = "Gentle Foaming Cleanser"
-        skincare1.stepType = "Cleanser"
-        skincare1.timeOfDay = "AM"
-        skincare1.notes = nil
-        skincare1.date = today
-        skincare1.createdAt = now
+        // AM slot - Completed
+        let amSlot = SkincareEntry(context: viewContext)
+        amSlot.id = UUID()
+        amSlot.date = today
+        amSlot.timeOfDay = SkincareTimeOfDay.am.rawValue
+        amSlot.status = SkincareSlotStatus.completed.rawValue
+        amSlot.products = "Cleanser, Vitamin C Serum, Moisturizer SPF 30"
+        amSlot.notes = "Felt refreshed!"
+        amSlot.createdAt = now
+        amSlot.updatedAt = now
         
-        let skincare2 = SkincareEntry(context: viewContext)
-        skincare2.id = UUID()
-        skincare2.productName = "Vitamin C Serum"
-        skincare2.stepType = "Serum"
-        skincare2.timeOfDay = "AM"
-        skincare2.notes = "Apply after toner"
-        skincare2.date = today
-        skincare2.createdAt = now
+        // PM slot - Not logged (default state)
+        let pmSlot = SkincareEntry(context: viewContext)
+        pmSlot.id = UUID()
+        pmSlot.date = today
+        pmSlot.timeOfDay = SkincareTimeOfDay.pm.rawValue
+        pmSlot.status = SkincareSlotStatus.notLogged.rawValue
+        pmSlot.products = nil
+        pmSlot.notes = nil
+        pmSlot.createdAt = now
+        pmSlot.updatedAt = now
         
-        let skincare3 = SkincareEntry(context: viewContext)
-        skincare3.id = UUID()
-        skincare3.productName = "Daily Moisturizer SPF 30"
-        skincare3.stepType = "Moisturizer"
-        skincare3.timeOfDay = "AM"
-        skincare3.notes = nil
-        skincare3.date = today
-        skincare3.createdAt = now
+        // Yesterday's slots
+        let yesterdayAM = SkincareEntry(context: viewContext)
+        yesterdayAM.id = UUID()
+        yesterdayAM.date = yesterday
+        yesterdayAM.timeOfDay = SkincareTimeOfDay.am.rawValue
+        yesterdayAM.status = SkincareSlotStatus.completed.rawValue
+        yesterdayAM.products = "Cleanser, Toner, Serum, Moisturizer"
+        yesterdayAM.notes = nil
+        yesterdayAM.createdAt = yesterday
+        yesterdayAM.updatedAt = yesterday
         
-        let skincare4 = SkincareEntry(context: viewContext)
-        skincare4.id = UUID()
-        skincare4.productName = "Oil Cleanser"
-        skincare4.stepType = "Cleanser"
-        skincare4.timeOfDay = "PM"
-        skincare4.notes = "Double cleanse first step"
-        skincare4.date = today
-        skincare4.createdAt = now
-        
-        let skincare5 = SkincareEntry(context: viewContext)
-        skincare5.id = UUID()
-        skincare5.productName = "Retinol Night Cream"
-        skincare5.stepType = "Treatment"
-        skincare5.timeOfDay = "PM"
-        skincare5.notes = "Use every other night"
-        skincare5.date = today
-        skincare5.createdAt = now
+        let yesterdayPM = SkincareEntry(context: viewContext)
+        yesterdayPM.id = UUID()
+        yesterdayPM.date = yesterday
+        yesterdayPM.timeOfDay = SkincareTimeOfDay.pm.rawValue
+        yesterdayPM.status = SkincareSlotStatus.skipped.rawValue
+        yesterdayPM.products = nil
+        yesterdayPM.notes = "Too tired"
+        yesterdayPM.createdAt = yesterday
+        yesterdayPM.updatedAt = yesterday
         
         do {
             try viewContext.save()
