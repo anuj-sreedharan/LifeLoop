@@ -152,6 +152,69 @@ struct PersistenceController {
         yesterdayPM.createdAt = yesterday
         yesterdayPM.updatedAt = yesterday
         
+        // MARK: - Sample SpendingEntry items
+        
+        // Today's spending
+        let todayCoffee = SpendingEntry(context: viewContext)
+        todayCoffee.id = UUID()
+        todayCoffee.date = today
+        todayCoffee.amount = NSDecimalNumber(decimal: 5.50)
+        todayCoffee.category = SpendingCategory.foodDrinks.rawValue
+        todayCoffee.notes = "Morning coffee"
+        todayCoffee.createdAt = now
+        
+        let todayLunch = SpendingEntry(context: viewContext)
+        todayLunch.id = UUID()
+        todayLunch.date = today
+        todayLunch.amount = NSDecimalNumber(decimal: 15.00)
+        todayLunch.category = SpendingCategory.foodDrinks.rawValue
+        todayLunch.notes = "Lunch with coworker"
+        todayLunch.createdAt = now
+        
+        let todayTransport = SpendingEntry(context: viewContext)
+        todayTransport.id = UUID()
+        todayTransport.date = today
+        todayTransport.amount = NSDecimalNumber(decimal: 12.50)
+        todayTransport.category = SpendingCategory.transport.rawValue
+        todayTransport.notes = "Uber to office"
+        todayTransport.createdAt = now
+        
+        // Yesterday's spending
+        let yesterdayGroceries = SpendingEntry(context: viewContext)
+        yesterdayGroceries.id = UUID()
+        yesterdayGroceries.date = yesterday
+        yesterdayGroceries.amount = NSDecimalNumber(decimal: 45.80)
+        yesterdayGroceries.category = SpendingCategory.foodDrinks.rawValue
+        yesterdayGroceries.notes = "Weekly groceries"
+        yesterdayGroceries.createdAt = yesterday
+        
+        let yesterdayShopping = SpendingEntry(context: viewContext)
+        yesterdayShopping.id = UUID()
+        yesterdayShopping.date = yesterday
+        yesterdayShopping.amount = NSDecimalNumber(decimal: 29.99)
+        yesterdayShopping.category = SpendingCategory.shopping.rawValue
+        yesterdayShopping.notes = "New headphones"
+        yesterdayShopping.createdAt = yesterday
+        
+        // 3 days ago
+        let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: today)!
+        
+        let subscriptionEntry = SpendingEntry(context: viewContext)
+        subscriptionEntry.id = UUID()
+        subscriptionEntry.date = threeDaysAgo
+        subscriptionEntry.amount = NSDecimalNumber(decimal: 14.99)
+        subscriptionEntry.category = SpendingCategory.subscriptions.rawValue
+        subscriptionEntry.notes = "Netflix"
+        subscriptionEntry.createdAt = threeDaysAgo
+        
+        let socialEntry = SpendingEntry(context: viewContext)
+        socialEntry.id = UUID()
+        socialEntry.date = threeDaysAgo
+        socialEntry.amount = NSDecimalNumber(decimal: 35.00)
+        socialEntry.category = SpendingCategory.social.rawValue
+        socialEntry.notes = "Dinner with friends"
+        socialEntry.createdAt = threeDaysAgo
+        
         do {
             try viewContext.save()
         } catch {
