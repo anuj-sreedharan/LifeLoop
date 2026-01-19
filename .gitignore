@@ -1,0 +1,96 @@
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+xcuserdata/
+
+# Xcode Scheme
+*.xcscheme
+
+# Build artifacts
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods (if used in the future)
+Pods/
+Podfile.lock
+
+# Carthage (if used in the future)
+Carthage/Build/
+Carthage/Checkouts/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+iOSInjectionProject/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+*.Trashes
+
+# IDE
+*.swp
+*.lock
+.idea/
+*.iml
+
+# Environment files
+.env
+.env.*
+
+# Secrets and credentials
+*.pem
+*.p12
+*.key
+*.mobileprovision
+
+# Archives
+*.xcarchive
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Instruments
+*.trace
+
+# Crash logs
+*.crash
+
+# Coverage
+*.gcno
+*.gcda
+*.profraw
+*.profdata
+
+# Test results
+TestResults/
+*.xcresult
+
+
+AGENTS.md
